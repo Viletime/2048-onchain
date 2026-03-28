@@ -141,7 +141,7 @@ function canMove() {
 function handleMove(dir) {
   if (gameOver) return;
   const moved = move(dir);
-  if (moved && sessionActive && contract) {
+if (moved && sessionActive && sessionContract) {
     queueMove(dir);
   }
 }
