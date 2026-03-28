@@ -123,18 +123,20 @@ async function checkBalanceLoop() {
 
       updateBalanceUI(eth);
 
-      if (eth >= 0.00003) {
-        // Tem saldo! Libera o jogo
-        clearInterval(balanceChecker);
-        document.getElementById('deposit-panel').style.display = 'none';
-        document.getElementById('session-btn').disabled = false;
-        document.getElementById('dot').className = 'status-dot connected';
+     if (eth >= 0.00003) {
+  clearInterval(balanceChecker);
+  document.getElementById('deposit-panel').style.display = 'none';
+  document.getElementById('session-btn').disabled = false;
+  document.getElementById('dot').className = 'status-dot connected';
 
-        // Verifica se já tem sessão ativa
-        if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
-          checkExistingSession();
-        }
-      }
+  if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
+    const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
+    sessionWallet = new ethers.Wallet(sessionWallet.privateKey, baseProvider);
+    sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
+    console.log("sessionContract criado:", sessionContract.target);
+    checkExistingSession();
+  }
+}
     } catch (e) { console.error(e); }
   };
 
