@@ -79,7 +79,7 @@ function loadOrCreateSessionWallet() {
     localStorage.setItem(key, sessionWallet.privateKey);
   }
 
-  if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
+  if (CONTRACT_ADDRESS !== "0x79BbeF6534D80337633FCc71d3Cf0adc726E8765") {
     sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
   }
 
