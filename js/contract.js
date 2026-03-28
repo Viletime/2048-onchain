@@ -1,5 +1,4 @@
-// ─── CONFIGURAÇÃO DO CONTRATO ────────────────────────────────
-// Após deployar o Game2048.sol na Base, cole o endereço aqui:
+// ─── CONFIGURAÇÃO ─────────────────────────────────────────────
 const CONTRACT_ADDRESS = "0x79BbeF6534D80337633FCc71d3Cf0adc726E8765";
 
 const CONTRACT_ABI = [
@@ -9,9 +8,8 @@ const CONTRACT_ABI = [
   "function getSession(address player) external view returns (bool active, uint256 expiresAt, uint256 moveCount, uint256 highScore)"
 ];
 
-const BASE_CHAIN_ID   = "0x2105";
-const BASE_RPC        = "https://mainnet.base.org";
-const FUND_AMOUNT_ETH = "0.002";
+const BASE_CHAIN_ID = "0x2105";
+const BASE_RPC      = "https://mainnet.base.org";
 
 // ─── ESTADO ───────────────────────────────────────────────────
 let mainProvider    = null;
@@ -24,15 +22,17 @@ let sessionExpires  = 0;
 let sessionTimer    = null;
 let txQueue         = [];
 let processingTx    = false;
+let balanceChecker  = null;
 
-// ─── CONECTAR WALLET PRINCIPAL ────────────────────────────────
+// ─── CONECTAR WALLET ──────────────────────────────────────────
 async function connectWallet() {
   if (!window.ethereum) {
-    alert("MetaMask não encontrada!\nInstale em: https://metamask.io");
+    alert("Nenhuma wallet encontrada!\nInstale a Rabby ou MetaMask.");
     return;
   }
   try {
     await window.ethereum.request({ method: 'eth_requestAccounts' });
+
     const chainId = await window.ethereum.request({ method: 'eth_chainId' });
     if (chainId !== BASE_CHAIN_ID) {
       try {
@@ -53,45 +53,107 @@ async function connectWallet() {
         });
       }
     }
+
     mainProvider  = new ethers.BrowserProvider(window.ethereum);
     mainSigner    = await mainProvider.getSigner();
     walletAddress = await mainSigner.getAddress();
-    updateWalletUI(true);
+
     loadOrCreateSessionWallet();
+    updateWalletUI(true);
+
   } catch (e) {
-    console.error("Erro ao conectar wallet:", e);
+    console.error("Erro ao conectar:", e);
   }
 }
 
-// ─── WALLET DE SESSÃO ─────────────────────────────────────────
+// ─── CRIAR / CARREGAR SESSION WALLET ─────────────────────────
 function loadOrCreateSessionWallet() {
-  const saved       = localStorage.getItem('sessionWalletKey_' + walletAddress);
+  const key         = 'sw_' + walletAddress;
+  const saved       = localStorage.getItem(key);
   const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
+
   if (saved) {
     sessionWallet = new ethers.Wallet(saved, baseProvider);
   } else {
     sessionWallet = ethers.Wallet.createRandom().connect(baseProvider);
-    localStorage.setItem('sessionWalletKey_' + walletAddress, sessionWallet.privateKey);
+    localStorage.setItem(key, sessionWallet.privateKey);
   }
+
   if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
     sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
   }
-  checkSessionWalletBalance();
+
+  // Mostra o painel de depósito
+  showDepositPanel();
+
+  // Verifica saldo a cada 5 segundos automaticamente
+  checkBalanceLoop();
 }
 
-async function checkSessionWalletBalance() {
-  if (!sessionWallet) return;
-  try {
-    const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
-    const balance      = await baseProvider.getBalance(sessionWallet.address);
-    const eth          = parseFloat(ethers.formatEther(balance));
-    updateSessionWalletUI(eth);
-    if (eth > 0.0001 && CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
-      checkExistingSession();
-    }
-  } catch (e) { console.error(e); }
+// ─── PAINEL DE DEPÓSITO ───────────────────────────────────────
+function showDepositPanel() {
+  const addr  = sessionWallet.address;
+  const short = addr.slice(0,6) + '...' + addr.slice(-4);
+
+  document.getElementById('deposit-panel').style.display = 'block';
+  document.getElementById('session-addr-short').textContent = short;
+  document.getElementById('session-addr-full').value = addr;
 }
 
+function copySessionAddress() {
+  const addr = sessionWallet.address;
+  navigator.clipboard.writeText(addr).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'COPIADO ✓';
+    setTimeout(() => btn.textContent = 'COPIAR', 2000);
+  });
+}
+
+// ─── VERIFICAÇÃO DE SALDO EM LOOP ────────────────────────────
+async function checkBalanceLoop() {
+  if (balanceChecker) clearInterval(balanceChecker);
+
+  const check = async () => {
+    if (!sessionWallet) return;
+    try {
+      const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
+      const balance      = await baseProvider.getBalance(sessionWallet.address);
+      const eth          = parseFloat(ethers.formatEther(balance));
+
+      updateBalanceUI(eth);
+
+      if (eth >= 0.0005) {
+        // Tem saldo! Libera o jogo
+        clearInterval(balanceChecker);
+        document.getElementById('deposit-panel').style.display = 'none';
+        document.getElementById('session-btn').disabled = false;
+        document.getElementById('dot').className = 'status-dot connected';
+
+        // Verifica se já tem sessão ativa
+        if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
+          checkExistingSession();
+        }
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  await check(); // roda imediatamente
+  balanceChecker = setInterval(check, 5000); // depois a cada 5s
+}
+
+function updateBalanceUI(eth) {
+  const el = document.getElementById('session-balance');
+  if (!el) return;
+  if (eth < 0.0001) {
+    el.textContent = 'Aguardando depósito...';
+    el.style.color = 'var(--muted)';
+  } else {
+    el.textContent = `✓ Saldo: ${eth.toFixed(5)} ETH`;
+    el.style.color = '#34d399';
+  }
+}
+
+// ─── SESSÃO ───────────────────────────────────────────────────
 async function checkExistingSession() {
   if (!sessionContract || !walletAddress) return;
   try {
@@ -105,17 +167,8 @@ async function checkExistingSession() {
   } catch (e) { console.error(e); }
 }
 
-// ─── INICIAR SESSÃO ───────────────────────────────────────────
 async function startSession() {
-  if (!sessionWallet) { alert("Conecte sua wallet primeiro!"); return; }
-  if (CONTRACT_ADDRESS === "SEU_ENDEREÇO_AQUI") { alert("Configure o endereço do contrato!"); return; }
-
-  const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
-  const balance      = await baseProvider.getBalance(sessionWallet.address);
-  const eth          = parseFloat(ethers.formatEther(balance));
-
-  if (eth < 0.0005) { await fundSessionWallet(); return; }
-
+  if (!sessionWallet || !sessionContract) return;
   const btn = document.getElementById('session-btn');
   btn.disabled = true; btn.textContent = 'INICIANDO...';
   try {
@@ -133,55 +186,6 @@ async function startSession() {
   }
 }
 
-// ─── FINANCIAR SESSION WALLET (única aprovação MetaMask) ──────
-async function fundSessionWallet() {
-  if (!mainSigner || !sessionWallet) return;
-  const btn = document.getElementById('session-btn');
-  btn.disabled = true; btn.textContent = 'AGUARDE METAMASK...';
-  try {
-    const short = sessionWallet.address.slice(0,6) + '...' + sessionWallet.address.slice(-4);
-    const ok = confirm(
-      `Para jogar sem popups precisamos enviar ${FUND_AMOUNT_ETH} ETH para uma wallet temporária.\n\n` +
-      `Wallet temporária: ${short}\n\n` +
-      `Este ETH é seu e pode ser sacado a qualquer momento.\n\nClique OK para confirmar na MetaMask.`
-    );
-    if (!ok) { btn.disabled = false; btn.textContent = 'INICIAR SESSÃO'; return; }
-
-    const tx = await mainSigner.sendTransaction({
-      to: sessionWallet.address,
-      value: ethers.parseEther(FUND_AMOUNT_ETH)
-    });
-    btn.textContent = 'TRANSFERINDO ETH...';
-    addTxLog('💰', 'Financiando session wallet', null, true);
-    await tx.wait();
-    updateLastTxLog(tx.hash);
-    await startSession();
-  } catch (e) {
-    console.error(e);
-    btn.disabled = false; btn.textContent = 'INICIAR SESSÃO';
-  }
-}
-
-// ─── SACAR ETH DA SESSION WALLET ─────────────────────────────
-async function withdrawSessionFunds() {
-  if (!sessionWallet || !walletAddress) return;
-  try {
-    const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
-    const balance      = await baseProvider.getBalance(sessionWallet.address);
-    if (balance === 0n) { alert("Session wallet sem saldo."); return; }
-    const gasPrice   = (await baseProvider.getFeeData()).gasPrice;
-    const gasCost    = gasPrice * 21000n;
-    const sendAmount = balance - gasCost;
-    if (sendAmount <= 0n) { alert("Saldo insuficiente para o gas do saque."); return; }
-    const tx = await sessionWallet.sendTransaction({ to: walletAddress, value: sendAmount, gasLimit: 21000n });
-    addTxLog('💸', 'Saque da session wallet', null, true);
-    await tx.wait();
-    updateLastTxLog(tx.hash);
-    alert("ETH sacado para sua wallet principal!");
-  } catch (e) { console.error(e); }
-}
-
-// ─── ENCERRAR JOGO ────────────────────────────────────────────
 async function endGame() {
   if (!sessionContract || !sessionActive) return;
   try {
@@ -220,29 +224,15 @@ async function processQueue() {
 
 // ─── UI ───────────────────────────────────────────────────────
 function updateWalletUI(connected) {
+  if (!connected) return;
   const dot        = document.getElementById('dot');
   const statusText = document.getElementById('status-text');
   const connectBtn = document.getElementById('connect-btn');
-  const sessionBtn = document.getElementById('session-btn');
-  if (connected) {
-    dot.className = 'status-dot connected';
-    const short   = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
-    statusText.innerHTML = `Conectado: <strong>${short}</strong>`;
-    connectBtn.textContent = 'CONECTADO';
-    connectBtn.disabled    = true;
-    if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") sessionBtn.disabled = false;
-    else sessionBtn.textContent = 'CONFIGURE O CONTRATO';
-  }
-}
-
-function updateSessionWalletUI(ethBalance) {
-  if (ethBalance > 0.0001) {
-    const statusText = document.getElementById('status-text');
-    statusText.innerHTML = `
-      Conectado: <strong>${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}</strong>
-      <span style="color:var(--accent2);margin-left:8px">⚡ ${ethBalance.toFixed(5)} ETH</span>
-    `;
-  }
+  dot.className    = 'status-dot connected';
+  const short      = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+  statusText.innerHTML   = `Conectado: <strong>${short}</strong>`;
+  connectBtn.textContent = 'CONECTADO';
+  connectBtn.disabled    = true;
 }
 
 function updateSessionUI() {
@@ -306,3 +296,4 @@ function updateTxLogEntry(idx, hash) {
   a.href = `https://basescan.org/tx/${hash}`; a.target = '_blank'; a.textContent = 'ver →';
   pending.replaceWith(a);
 }
+  
