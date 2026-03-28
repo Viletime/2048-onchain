@@ -6,6 +6,97 @@
 <title>2048 on Base</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* ── Deposit panel ── */
+  #deposit-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  #deposit-panel h4 {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent2);
+    margin-bottom: 10px;
+  }
+  #deposit-panel p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  #deposit-panel p strong { color: var(--text); }
+  .addr-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  #session-addr-full {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--accent2);
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    outline: none;
+    cursor: text;
+  }
+  #copy-btn {
+    background: var(--border);
+    color: var(--text);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: background .2s;
+    white-space: nowrap;
+  }
+  #copy-btn:hover { background: var(--accent); }
+  #session-balance {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 4px 0;
+  }
+  .deposit-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .deposit-step {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .step-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--accent2);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -30,6 +121,34 @@
     <div class="status-dot" id="dot"></div>
     <div class="status-text" id="status-text">Conecte sua wallet para jogar</div>
     <button class="btn" id="connect-btn" onclick="connectWallet()">CONECTAR</button>
+  </div>
+
+  <!-- Painel de depósito manual -->
+  <div id="deposit-panel">
+    <h4>⚡ CONFIGURAR SESSION WALLET</h4>
+    <p>
+      Para jogar <strong>sem popups</strong>, envie <strong>0.002 ETH</strong> na rede Base
+      para o endereço abaixo. O site detecta o saldo automaticamente.
+    </p>
+    <div class="deposit-steps">
+      <div class="deposit-step">
+        <div class="step-num">1</div>
+        <span>Copie o endereço da session wallet abaixo</span>
+      </div>
+      <div class="deposit-step">
+        <div class="step-num">2</div>
+        <span>Abra sua Rabby, envie <strong style="color:var(--text)">0.002 ETH</strong> na rede <strong style="color:var(--text)">Base</strong></span>
+      </div>
+      <div class="deposit-step">
+        <div class="step-num">3</div>
+        <span>Aguarde — o site detecta e libera o jogo automaticamente</span>
+      </div>
+    </div>
+    <div class="addr-row">
+      <input id="session-addr-full" type="text" readonly onclick="this.select()">
+      <button id="copy-btn" onclick="copySessionAddress()">COPIAR</button>
+    </div>
+    <div id="session-balance">Aguardando depósito...</div>
   </div>
 
   <div class="session-info" id="session-info">
@@ -75,7 +194,6 @@
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
 <script>
-  // Inicia o jogo ao carregar a página
   initGrid();
 </script>
 </body>
