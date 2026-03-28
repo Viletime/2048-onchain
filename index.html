@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2048 on Base</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="chain-badge">BASE MAINNET</div>
+
+  <header>
+    <div class="logo">2048<span>ON-CHAIN</span></div>
+    <div class="scores">
+      <div class="score-box">
+        <label>SCORE</label>
+        <div class="val" id="score">0</div>
+      </div>
+      <div class="score-box">
+        <label>MOVES</label>
+        <div class="val" id="moves">0</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-dot" id="dot"></div>
+    <div class="status-text" id="status-text">Conecte sua wallet para jogar</div>
+    <button class="btn" id="connect-btn" onclick="connectWallet()">CONECTAR</button>
+  </div>
+
+  <div class="session-info" id="session-info">
+    <span>Sessão ativa</span>
+    <span class="pill" id="session-timer">--:--</span>
+    <button class="btn danger" style="font-size:10px;padding:6px 12px" onclick="endGame()">ENCERRAR</button>
+  </div>
+
+  <div class="board-wrap">
+    <div id="board"></div>
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">GAME OVER</h2>
+      <p id="overlay-msg">Score registrado on-chain</p>
+      <button class="btn" onclick="restartGame()">JOGAR DE NOVO</button>
+    </div>
+  </div>
+
+  <div class="mobile-arrows">
+    <div class="arrow-row"><button class="arrow-btn" onclick="handleMove(0)">↑</button></div>
+    <div class="arrow-row">
+      <button class="arrow-btn" onclick="handleMove(2)">←</button>
+      <button class="arrow-btn" onclick="handleMove(1)">↓</button>
+      <button class="arrow-btn" onclick="handleMove(3)">→</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn outline" style="flex:1" onclick="restartGame()">NOVO JOGO</button>
+    <button class="btn" id="session-btn" style="flex:2" onclick="startSession()" disabled>INICIAR SESSÃO</button>
+  </div>
+
+  <div class="tx-log">
+    <h3>TRANSAÇÕES ON-CHAIN</h3>
+    <div id="tx-list">
+      <div class="tx-item empty">Nenhuma transação ainda</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script src="js/contract.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  // Inicia o jogo ao carregar a página
+  initGrid();
+</script>
+</body>
+</html>
