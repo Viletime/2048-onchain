@@ -92,12 +92,13 @@ function loadOrCreateSessionWallet() {
 
 // ─── PAINEL DE DEPÓSITO ───────────────────────────────────────
 function showDepositPanel() {
-  const addr  = sessionWallet.address;
-  const short = addr.slice(0,6) + '...' + addr.slice(-4);
+  const addr = sessionWallet.address;
 
-  document.getElementById('deposit-panel').style.display = 'block';
-  document.getElementById('session-addr-short').textContent = short;
-  document.getElementById('session-addr-full').value = addr;
+  const panel    = document.getElementById('deposit-panel');
+  const addrFull = document.getElementById('session-addr-full');
+
+  if (panel)    panel.style.display = 'block';
+  if (addrFull) addrFull.value = addr;
 }
 
 function copySessionAddress() {
