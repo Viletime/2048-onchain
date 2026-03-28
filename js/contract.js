@@ -122,7 +122,7 @@ async function checkBalanceLoop() {
 
       updateBalanceUI(eth);
 
-      if (eth >= 0.0005) {
+      if (eth >= 0.00003) {
         // Tem saldo! Libera o jogo
         clearInterval(balanceChecker);
         document.getElementById('deposit-panel').style.display = 'none';
@@ -296,4 +296,3 @@ function updateTxLogEntry(idx, hash) {
   a.href = `https://basescan.org/tx/${hash}`; a.target = '_blank'; a.textContent = 'ver →';
   pending.replaceWith(a);
 }
-  
