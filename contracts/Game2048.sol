@@ -3,9 +3,9 @@ pragma solidity ^0.8.20;
 
 /**
  * @title Game2048
- * @notice Registra movimentos e scores do jogo 2048 on-chain na rede Base.
- *         Usa session keys com duração de 2 horas para evitar popup
- *         de confirmação a cada movimento.
+ * @notice Jogo 2048 on-chain na rede Base.
+ *         Usa session wallet para assinar movimentos sem popup.
+ *         O score e histórico ficam salvos na wallet principal do jogador.
  */
 contract Game2048 {
 
@@ -16,77 +16,75 @@ contract Game2048 {
         uint256  expiresAt;
         uint256  moveCount;
         uint256  highScore;
+        address  sessionWallet; // wallet autorizada a assinar movimentos
     }
 
-    // player => sessão atual
-    mapping(address => Session) public sessions;
-
-    // player => histórico de scores finais
+    mapping(address => Session)   public sessions;
     mapping(address => uint256[]) public scoreHistory;
-
-    // lista de jogadores únicos
     address[] public players;
     mapping(address => bool) public registered;
 
-    // ── Eventos ───────────────────────────────────────────────
-    event SessionStarted(address indexed player, uint256 expiresAt);
+    event SessionStarted(address indexed player, address sessionWallet, uint256 expiresAt);
     event MovePlayed(address indexed player, uint8 direction, uint256 score, uint256 moveNumber);
     event GameOver(address indexed player, uint256 finalScore, uint256 totalMoves);
     event NewHighScore(address indexed player, uint256 score);
 
-    // ── Funções ───────────────────────────────────────────────
-
     /**
-     * @notice Inicia uma nova sessão de jogo (validade: 2 horas).
-     *         Deve ser chamada antes de registrar movimentos.
+     * @notice Inicia sessão. Chamado pela session wallet passando o endereço principal.
+     * @param player Endereço da wallet principal do jogador
      */
-    function startSession() external {
-        Session storage s = sessions[msg.sender];
-        s.active    = true;
-        s.expiresAt = block.timestamp + SESSION_DURATION;
-        s.moveCount = 0;
+    function startSession(address player) external {
+        Session storage s = sessions[player];
+        s.active        = true;
+        s.expiresAt     = block.timestamp + SESSION_DURATION;
+        s.moveCount     = 0;
+        s.sessionWallet = msg.sender; // salva a session wallet autorizada
 
-        if (!registered[msg.sender]) {
-            registered[msg.sender] = true;
-            players.push(msg.sender);
+        if (!registered[player]) {
+            registered[player] = true;
+            players.push(player);
         }
 
-        emit SessionStarted(msg.sender, s.expiresAt);
+        emit SessionStarted(player, msg.sender, s.expiresAt);
     }
 
     /**
-     * @notice Registra um movimento on-chain.
+     * @notice Registra um movimento. Chamado pela session wallet.
+     * @param player    Endereço da wallet principal
      * @param direction 0=cima 1=baixo 2=esquerda 3=direita
-     * @param score     Score atual do jogador
+     * @param score     Score atual
      */
-    function recordMove(uint8 direction, uint256 score) external {
-        Session storage s = sessions[msg.sender];
+    function recordMove(address player, uint8 direction, uint256 score) external {
+        Session storage s = sessions[player];
         require(s.active,                       "Game2048: sem sessao ativa");
         require(block.timestamp < s.expiresAt,  "Game2048: sessao expirada");
+        require(s.sessionWallet == msg.sender,  "Game2048: wallet nao autorizada");
         require(direction <= 3,                 "Game2048: direcao invalida");
 
         s.moveCount += 1;
 
         if (score > s.highScore) {
             s.highScore = score;
-            emit NewHighScore(msg.sender, score);
+            emit NewHighScore(player, score);
         }
 
-        emit MovePlayed(msg.sender, direction, score, s.moveCount);
+        emit MovePlayed(player, direction, score, s.moveCount);
     }
 
     /**
-     * @notice Encerra o jogo e salva o score final no histórico.
-     * @param finalScore Score final da partida
+     * @notice Encerra o jogo e salva o score final.
+     * @param player     Endereço da wallet principal
+     * @param finalScore Score final
      */
-    function endGame(uint256 finalScore) external {
-        Session storage s = sessions[msg.sender];
-        require(s.active, "Game2048: sem sessao ativa");
+    function endGame(address player, uint256 finalScore) external {
+        Session storage s = sessions[player];
+        require(s.active,                      "Game2048: sem sessao ativa");
+        require(s.sessionWallet == msg.sender, "Game2048: wallet nao autorizada");
 
         s.active = false;
-        scoreHistory[msg.sender].push(finalScore);
+        scoreHistory[player].push(finalScore);
 
-        emit GameOver(msg.sender, finalScore, s.moveCount);
+        emit GameOver(player, finalScore, s.moveCount);
     }
 
     // ── Views ─────────────────────────────────────────────────
