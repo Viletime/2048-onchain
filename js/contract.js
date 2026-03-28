@@ -1,5 +1,5 @@
 // ─── CONFIGURAÇÃO ─────────────────────────────────────────────
-const CONTRACT_ADDRESS = "0x79BbeF6534D80337633FCc71d3Cf0adc726E8765";
+const CONTRACT_ADDRESS = "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8";
 
 const CONTRACT_ABI = [
   "function startSession(address player) external",
@@ -79,7 +79,7 @@ function loadOrCreateSessionWallet() {
     localStorage.setItem(key, sessionWallet.privateKey);
   }
 
-  if (CONTRACT_ADDRESS !== "0x79BbeF6534D80337633FCc71d3Cf0adc726E8765") {
+  if (CONTRACT_ADDRESS !== "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8") {
     sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
   }
 
