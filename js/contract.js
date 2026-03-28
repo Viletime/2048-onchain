@@ -1,6 +1,6 @@
 // ─── CONFIGURAÇÃO DO CONTRATO ────────────────────────────────
 // Após deployar o Game2048.sol na Base, cole o endereço aqui:
-const CONTRACT_ADDRESS = "SEU_ENDEREÇO_AQUI";
+const CONTRACT_ADDRESS = "0x79BbeF6534D80337633FCc71d3Cf0adc726E8765";
 
 const CONTRACT_ABI = [
   "function startSession() external",
