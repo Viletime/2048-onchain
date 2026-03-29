@@ -1,4 +1,4 @@
-a// ─── CONFIGURAÇÃO ─────────────────────────────────────────────
+// ─── CONFIGURAÇÃO ─────────────────────────────────────────────
 const CONTRACT_ADDRESS = "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8";
 
 const CONTRACT_ABI = [
@@ -68,8 +68,8 @@ async function connectWallet() {
 
 // ─── CRIAR / CARREGAR SESSION WALLET ─────────────────────────
 function loadOrCreateSessionWallet() {
-  const key         = 'sw_' + walletAddress;
-  const saved       = localStorage.getItem(key);
+  const key          = 'sw_' + walletAddress;
+  const saved        = localStorage.getItem(key);
   const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
 
   if (saved) {
@@ -79,24 +79,17 @@ function loadOrCreateSessionWallet() {
     localStorage.setItem(key, sessionWallet.privateKey);
   }
 
-  if (CONTRACT_ADDRESS !== "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8") {
-    sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
-  }
+  sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
 
-  // Mostra o painel de depósito
   showDepositPanel();
-
-  // Verifica saldo a cada 5 segundos automaticamente
   checkBalanceLoop();
 }
 
 // ─── PAINEL DE DEPÓSITO ───────────────────────────────────────
 function showDepositPanel() {
-  const addr = sessionWallet.address;
-
+  const addr     = sessionWallet.address;
   const panel    = document.getElementById('deposit-panel');
   const addrFull = document.getElementById('session-addr-full');
-
   if (panel)    panel.style.display = 'block';
   if (addrFull) addrFull.value = addr;
 }
@@ -123,25 +116,23 @@ async function checkBalanceLoop() {
 
       updateBalanceUI(eth);
 
-     if (eth >= 0.00003) {
-  clearInterval(balanceChecker);
-  document.getElementById('deposit-panel').style.display = 'none';
-  document.getElementById('session-btn').disabled = false;
-  document.getElementById('dot').className = 'status-dot connected';
+      if (eth >= 0.00003) {
+        clearInterval(balanceChecker);
+        document.getElementById('deposit-panel').style.display = 'none';
+        document.getElementById('session-btn').disabled = false;
+        document.getElementById('dot').className = 'status-dot connected';
 
-  if (CONTRACT_ADDRESS !== "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8") {
-    const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
-    sessionWallet = new ethers.Wallet(sessionWallet.privateKey, baseProvider);
-    sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
-    console.log("sessionContract criado:", sessionContract.target);
-    checkExistingSession();
-  }
-}
+        const baseProvider2 = new ethers.JsonRpcProvider(BASE_RPC);
+        sessionWallet   = new ethers.Wallet(sessionWallet.privateKey, baseProvider2);
+        sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
+        console.log("sessionContract criado:", sessionContract.target);
+        checkExistingSession();
+      }
     } catch (e) { console.error(e); }
   };
 
-  await check(); // roda imediatamente
-  balanceChecker = setInterval(check, 5000); // depois a cada 5s
+  await check();
+  balanceChecker = setInterval(check, 5000);
 }
 
 function updateBalanceUI(eth) {
@@ -205,6 +196,27 @@ async function endGame() {
   } catch (e) { console.error(e); }
 }
 
+// ─── SACAR ETH DA SESSION WALLET ─────────────────────────────
+async function withdrawSessionFunds() {
+  if (!sessionWallet || !walletAddress) return;
+  try {
+    const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
+    const balance      = await baseProvider.getBalance(sessionWallet.address);
+    if (balance === 0n) { alert("Session wallet sem saldo."); return; }
+    const gasPrice   = (await baseProvider.getFeeData()).gasPrice;
+    const gasCost    = gasPrice * 21000n;
+    const sendAmount = balance - gasCost;
+    if (sendAmount <= 0n) { alert("Saldo insuficiente para o gas do saque."); return; }
+    const tx = await sessionWallet.sendTransaction({
+      to: walletAddress, value: sendAmount, gasLimit: 21000n
+    });
+    addTxLog('💸', 'Saque da session wallet', null, true);
+    await tx.wait();
+    updateLastTxLog(tx.hash);
+    alert("ETH sacado para sua wallet principal!");
+  } catch (e) { console.error(e); }
+}
+
 // ─── FILA DE MOVIMENTOS (sem popup!) ─────────────────────────
 async function queueMove(direction) {
   if (txQueue.length >= 3) return;
@@ -220,7 +232,7 @@ async function processQueue() {
   const idx     = addTxLog(dirIcon, `Move ${dirIcon} — score ${score}`, null, true);
   try {
     const tx = await sessionContract.recordMove(walletAddress, dir, score);
-    updateTxLogEntry(idx, tx.hash);a
+    updateTxLogEntry(idx, tx.hash);
   } catch (e) { console.error("Erro na txn:", e); }
   processQueue();
 }
