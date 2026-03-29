@@ -129,7 +129,7 @@ async function checkBalanceLoop() {
   document.getElementById('session-btn').disabled = false;
   document.getElementById('dot').className = 'status-dot connected';
 
-  if (CONTRACT_ADDRESS !== "SEU_ENDEREÇO_AQUI") {
+  if (CONTRACT_ADDRESS !== "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8") {
     const baseProvider = new ethers.JsonRpcProvider(BASE_RPC);
     sessionWallet = new ethers.Wallet(sessionWallet.privateKey, baseProvider);
     sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
