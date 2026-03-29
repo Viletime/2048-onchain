@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <style>
-  /* ── Deposit panel ── */
   #deposit-panel {
     display: none;
     background: var(--surface);
@@ -96,6 +95,16 @@
     justify-content: center;
     flex-shrink: 0;
   }
+  .warning-box {
+    background: #1c1c28;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: #fca5a5;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -123,13 +132,14 @@
     <button class="btn" id="connect-btn" onclick="connectWallet()">CONECTAR</button>
   </div>
 
-  <!-- Painel de depósito manual -->
+  <!-- Painel de depósito -->
   <div id="deposit-panel">
     <h4>⚡ CONFIGURAR SESSION WALLET</h4>
-    <p>
-      Para jogar <strong>sem popups</strong>, envie pelo menos <strong>0.0001 ETH</strong> (~$0,30) na rede Base
-      para o endereço abaixo. O site detecta o saldo automaticamente.
-    </p>
+
+    <div class="warning-box">
+      ⚠️ Deposite apenas valores pequenos (menos de $1). A session wallet é separada da sua wallet principal e não tem acesso a ela.
+    </div>
+
     <div class="deposit-steps">
       <div class="deposit-step">
         <div class="step-num">1</div>
@@ -137,13 +147,14 @@
       </div>
       <div class="deposit-step">
         <div class="step-num">2</div>
-        <span>Abra sua Rabby, envie <strong style="color:var(--text)">0.0001 ETH</strong> na rede <strong style="color:var(--text)">Base</strong></span>
+        <span>Abra sua Rabby, envie pelo menos <strong style="color:var(--text)">0.0001 ETH</strong> na rede <strong style="color:var(--text)">Base</strong></span>
       </div>
       <div class="deposit-step">
         <div class="step-num">3</div>
         <span>Aguarde — o site detecta e libera o jogo automaticamente</span>
       </div>
     </div>
+
     <div class="addr-row">
       <input id="session-addr-full" type="text" readonly onclick="this.select()">
       <button id="copy-btn" onclick="copySessionAddress()">COPIAR</button>
@@ -151,12 +162,14 @@
     <div id="session-balance">Aguardando depósito...</div>
   </div>
 
+  <!-- Sessão ativa -->
   <div class="session-info" id="session-info">
     <span>Sessão ativa</span>
     <span class="pill" id="session-timer">--:--</span>
     <button class="btn danger" style="font-size:10px;padding:6px 12px" onclick="endGame()">ENCERRAR</button>
   </div>
 
+  <!-- Board -->
   <div class="board-wrap">
     <div id="board"></div>
     <div class="overlay" id="overlay">
@@ -166,6 +179,7 @@
     </div>
   </div>
 
+  <!-- Setas mobile -->
   <div class="mobile-arrows">
     <div class="arrow-row"><button class="arrow-btn" onclick="handleMove(0)">↑</button></div>
     <div class="arrow-row">
@@ -175,11 +189,20 @@
     </div>
   </div>
 
+  <!-- Controles -->
   <div class="controls">
     <button class="btn outline" style="flex:1" onclick="restartGame()">NOVO JOGO</button>
     <button class="btn" id="session-btn" style="flex:2" onclick="startSession()" disabled>INICIAR SESSÃO</button>
   </div>
 
+  <!-- Botão de saque -->
+  <div style="margin-top:12px;text-align:center">
+    <button class="btn outline" style="font-size:10px" onclick="withdrawSessionFunds()">
+      SACAR ETH DA SESSION WALLET
+    </button>
+  </div>
+
+  <!-- Log de transações -->
   <div class="tx-log">
     <h3>TRANSAÇÕES ON-CHAIN</h3>
     <div id="tx-list">
