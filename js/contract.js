@@ -220,8 +220,7 @@ async function processQueue() {
   const idx     = addTxLog(dirIcon, `Move ${dirIcon} — score ${score}`, null, true);
   try {
     const tx = await sessionContract.recordMove(walletAddress, dir, score);
-    updateTxLogEntry(idx, tx.hash);
-    await tx.wait();
+    updateTxLogEntry(idx, tx.hash);a
   } catch (e) { console.error("Erro na txn:", e); }
   processQueue();
 }
