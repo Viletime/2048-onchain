@@ -1,5 +1,5 @@
 // ─── CONFIGURAÇÃO ─────────────────────────────────────────────
-const CONTRACT_ADDRESS = "0x7FE3d8732b9a1E69cDFaE8f8C8075bd11361A585";
+const CONTRACT_ADDRESS = "0x654D0f88689700a52F1348BB7f5315CA8fC2539d";
 
 const CONTRACT_ABI = [
   "function startSession(address player) external",
