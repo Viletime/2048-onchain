@@ -1,4 +1,4 @@
-// ─── CONFIGURAÇÃO ─────────────────────────────────────────────
+a// ─── CONFIGURAÇÃO ─────────────────────────────────────────────
 const CONTRACT_ADDRESS = "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8";
 
 const CONTRACT_ABI = [
@@ -207,6 +207,7 @@ async function endGame() {
 
 // ─── FILA DE MOVIMENTOS (sem popup!) ─────────────────────────
 async function queueMove(direction) {
+  if (txQueue.length >= 3) return;
   txQueue.push(direction);
   if (!processingTx) processQueue();
 }
