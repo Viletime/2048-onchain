@@ -1,11 +1,11 @@
 // ─── CONFIGURAÇÃO ─────────────────────────────────────────────
-const CONTRACT_ADDRESS = "0x1Bb65fFc900E256Dc2F418Af83BA3e7472F251F8";
+const CONTRACT_ADDRESS = "0x7FE3d8732b9a1E69cDFaE8f8C8075bd11361A585";
 
 const CONTRACT_ABI = [
   "function startSession(address player) external",
-  "function recordMove(address player, uint8 direction, uint256 score) external",
+  "function recordMove(address player, uint8 direction) external",
   "function endGame(address player, uint256 finalScore) external",
-  "function getSession(address player) external view returns (bool active, uint256 expiresAt, uint256 moveCount, uint256 highScore)"
+  "function getSession(address player) external view returns (bool active, uint256 expiresAt, uint256 moveCount)"
 ];
 
 const BASE_CHAIN_ID = "0x2105";
@@ -125,7 +125,6 @@ async function checkBalanceLoop() {
         const baseProvider2 = new ethers.JsonRpcProvider(BASE_RPC);
         sessionWallet   = new ethers.Wallet(sessionWallet.privateKey, baseProvider2);
         sessionContract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, sessionWallet);
-        console.log("sessionContract criado:", sessionContract.target);
         checkExistingSession();
       }
     } catch (e) { console.error(e); }
@@ -229,9 +228,9 @@ async function processQueue() {
   processingTx  = true;
   const dir     = txQueue.shift();
   const dirIcon = ['↑','↓','←','→'][dir];
-  const idx     = addTxLog(dirIcon, `Move ${dirIcon} — score ${score}`, null, true);
+  const idx     = addTxLog(dirIcon, `Move ${dirIcon}`, null, true);
   try {
-    const tx = await sessionContract.recordMove(walletAddress, dir, score);
+    const tx = await sessionContract.recordMove(walletAddress, dir);
     updateTxLogEntry(idx, tx.hash);
   } catch (e) { console.error("Erro na txn:", e); }
   processQueue();
